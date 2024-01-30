@@ -37,9 +37,9 @@ fn get_me(stdin: &mut StdinLock) -> Result<PlayerId> {
     Ok(me)
 }
 
-fn get_hand(stdin: &mut StdinLock) -> Result<Hand> {
+fn get_hand(line: String) -> Result<Hand> {
     let hand = {
-        let hand = read_line_trimed(stdin)?
+        let hand = line
             .split_whitespace()
             .skip(1) // skip the "hand" prefix
             .map(|s| Card::try_from(s.to_string()))
@@ -101,8 +101,13 @@ fn play_trick(stdin: &mut StdinLock, game: &mut Game) -> Result<()> {
     Ok(())
 }
 
-fn play_round(stdin: &mut StdinLock, me: PlayerId) -> Result<()> {
-    let hand = get_hand(stdin)?;
+fn play_round(stdin: &mut StdinLock, me: PlayerId) -> Result<bool> {
+    let first_line = read_line_trimed(stdin)?;
+    if first_line == "end" {
+        return Ok(false);
+    }
+
+    let hand = get_hand(first_line)?;
 
     let nb_tricks = hand.cards().len();
 
@@ -114,10 +119,8 @@ fn play_round(stdin: &mut StdinLock, me: PlayerId) -> Result<()> {
         play_trick(stdin, &mut game)?;
     }
 
-    Ok(())
+    Ok(true)
 }
-
-const NB_ROUNDS: usize = 10;
 
 // Dix-oxyde
 fn main() -> Result<()> {
@@ -129,8 +132,7 @@ fn main() -> Result<()> {
 
     let me = get_me(&mut stdin)?;
 
-    for _ in 0..NB_ROUNDS {
-        play_round(&mut stdin, me)?;
+    while play_round(&mut stdin, me)? {
     }
 
     Ok(())
