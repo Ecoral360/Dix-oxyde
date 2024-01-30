@@ -1,16 +1,16 @@
 #![allow(dead_code)]
 
 mod strategy;
-mod types;
+mod game;
 
 use anyhow::Result;
 use log::info;
 use std::io::{BufRead, StdinLock};
-use types::{Card, Game, Hand, PlayerId};
+use game::{Card, Game, Hand, PlayerId};
 
 use crate::{
-    strategy::{get_bid_to_make, get_next_card_to_play},
-    types::NB_PLAYERS,
+    strategy::{make_bid, choose_card},
+    game::NB_PLAYERS,
 };
 
 fn read_line(stdin: &mut StdinLock) -> Result<String> {
@@ -58,7 +58,7 @@ fn bid(stdin: &mut StdinLock, game: &mut Game) -> Result<()> {
         let next_line = read_line_stripped(stdin, "bid ")?;
 
         if next_line == "?" {
-            println!("{}", get_bid_to_make(&game));
+            println!("{}", make_bid(&game));
             continue;
         }
 
@@ -84,7 +84,7 @@ fn play_trick(stdin: &mut StdinLock, game: &mut Game) -> Result<()> {
         let next_line = read_line_stripped(stdin, "card ")?;
 
         if next_line == "?" {
-            let card = get_next_card_to_play(&game);
+            let card = choose_card(&game);
             game.play_card(card);
             println!("{}", card);
             continue;
