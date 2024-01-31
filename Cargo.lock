@@ -45,19 +45,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed570934406eb16438a4e976b1b4500774099c13b8cb96eec99f620f05090ddf"
 
 [[package]]
-name = "bot"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "derive-getters",
- "derive-new",
- "flexi_logger",
- "log",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "bumpalo"
 version = "3.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -116,6 +103,19 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.48",
+]
+
+[[package]]
+name = "dix_oxyde"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "derive-getters",
+ "derive-new",
+ "flexi_logger",
+ "log",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

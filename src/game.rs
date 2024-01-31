@@ -1,12 +1,12 @@
 use anyhow::anyhow;
 use derive_getters::Getters;
 use derive_new::new;
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display};
 
 pub const NB_SUITS: usize = 4;
 pub const NB_PLAYERS: usize = 4;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
 pub enum Suit {
     Clubs,
     Diamonds,
@@ -175,6 +175,28 @@ impl Hand {
         } else {
             followed
         }
+    }
+
+    pub fn repartition(&self) -> HashMap<Suit, u8> {
+        let mut repartition = HashMap::new();
+        for card in self.cards() {
+            repartition
+                .entry(*card.suit())
+                .and_modify(|e| *e += 1)
+                .or_insert(1);
+        }
+        repartition
+    }
+
+    pub fn has_suit(&self, suit: Suit) -> bool {
+        self.cards.iter().any(|c| c.suit() == &suit)
+    }
+
+    pub fn empty_suits(&self) -> Vec<Suit> {
+        self.repartition()
+            .iter()
+            .filter_map(|(&suit, &count)| if count == 0 { Some(suit) } else { None })
+            .collect()
     }
 }
 
