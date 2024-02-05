@@ -5,9 +5,11 @@ use dix_oxyde::{
     play_game,
     strategy::{BidStrategy, PlayStrategy},
 };
+use log::{info, warn};
 
-#[derive(Default)]
-struct MyStrategy;
+#[derive(Default, Debug)]
+struct MyStrategy {
+}
 
 impl BidStrategy for MyStrategy {
     fn make_bid(&mut self, game: &Game) -> u8 {
@@ -38,7 +40,20 @@ fn main() -> Result<()> {
         .format(flexi_logger::colored_default_format)
         .start()?;
 
+    // let ppid = std::os::unix::process::parent_id();
+    //
+    // let command = std::process::Command::new("ps")
+    //     .arg("-p")
+    //     .arg(ppid.to_string())
+    //     .arg("-o")
+    //     .arg("pid,ppid,command")
+    //     .output()
+    //     .expect("failed to execute ps");
+
+    // info!("{}", String::from_utf8_lossy(&command.stdout));
+
     let mut strategy = MyStrategy::default();
     play_game(&mut strategy)?;
+
     Ok(())
 }

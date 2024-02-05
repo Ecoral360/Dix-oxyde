@@ -301,6 +301,10 @@ pub struct Round {
 
 impl Round {
     pub fn play_card(&mut self, player: PlayerId, card: Card) {
+        if self.trump.is_none() {
+            self.trump = Some(*card.suit());
+        }
+
         self.ongoing.push(player, card);
 
         if self.ongoing.is_full() {
@@ -367,10 +371,6 @@ impl Game {
     }
 
     pub fn card_played(&mut self, player: PlayerId, card: Card) {
-        if self.trump().is_none() {
-            self.round.trump = Some(*card.suit());
-        }
-
         self.round.play_card(player, card);
     }
 }

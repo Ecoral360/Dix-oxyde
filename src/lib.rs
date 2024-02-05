@@ -92,9 +92,9 @@ where
             continue;
         }
 
-        let (player, bid) = next_line.split_once(' ').unwrap();
+        let (player, card) = next_line.split_once(' ').unwrap();
         let player = player.parse::<usize>()?;
-        let card = Card::try_from(bid.to_string())?;
+        let card = Card::try_from(card.to_string())?;
         game.card_played(player, card);
 
         played += 1;
