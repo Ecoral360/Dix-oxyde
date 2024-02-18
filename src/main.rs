@@ -1,14 +1,18 @@
+#![allow(unused_variables)]
+
 use anyhow::Result;
 
 use dix_oxyde::{
-    game::{Card, Game},
+    game::{Card, Deck, Game},
     play_game,
     strategy::{BidStrategy, PlayStrategy},
 };
-use log::{info, warn};
+use log::info;
 
 #[derive(Default, Debug)]
 struct MyStrategy {
+    attacking: bool,
+    other_players: [Deck; 3],
 }
 
 impl BidStrategy for MyStrategy {
@@ -24,21 +28,42 @@ impl BidStrategy for MyStrategy {
 
         0
     }
+
+    fn after_bid_phase(&mut self, game: &Game) {
+        // Safe to unwrap because we are after the bid phase
+        let winner = game.bid_record().winner().unwrap();
+
+        self.attacking = winner == *game.me() || winner == game.team_mate();
+
+        let deck = game.deck_witout_hand();
+        // let mut other_players = [Deck::new(); 3];
+    }
 }
 
 impl PlayStrategy for MyStrategy {
     fn choose_card(&mut self, game: &Game) -> Card {
         let playable_cards = game.playable_cards();
 
+        let master_cards = game.hand().master_cards(game.deck());
+        if !master_cards.is_empty() {
+            info!("Playing master card: {}", master_cards[0]);
+            info!("deck: {:?}", game.deck());
+            return master_cards[0];
+        }
+
         playable_cards[0]
+    }
+
+    fn after_trick(&mut self, game: &Game) {
+        todo!()
     }
 }
 
 // Dix-oxyde
 fn main() -> Result<()> {
-    flexi_logger::Logger::try_with_str("info")?
-        .format(flexi_logger::colored_default_format)
-        .start()?;
+    // flexi_logger::Logger::try_with_str("info")?
+    //     .format(flexi_logger::colored_default_format)
+    //     .start()?;
 
     // let ppid = std::os::unix::process::parent_id();
     //

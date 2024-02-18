@@ -2,6 +2,7 @@
 
 pub mod game;
 pub mod strategy;
+pub mod startegies;
 
 use anyhow::Result;
 use game::{Card, Game, Hand, PlayerId, NB_PLAYERS};
@@ -87,7 +88,6 @@ where
 
         if next_line == "?" {
             let card = strategy.choose_card(&game);
-            game.play_card(card);
             println!("{}", card);
             continue;
         }
@@ -118,10 +118,16 @@ where
 
     let mut game = Game::new(me, hand);
 
+    strategy.setup_bid_phase(&game);
+
     bid(stdin, &mut game, strategy)?;
 
+    strategy.after_bid_phase(&game);
+
     for _ in 0..nb_tricks {
+        strategy.setup_trick(&game);
         play_trick(stdin, &mut game, strategy)?;
+        strategy.after_trick(&game);
     }
 
     Ok(true)

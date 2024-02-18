@@ -1,6 +1,7 @@
 use anyhow::anyhow;
 use derive_getters::Getters;
 use derive_new::new;
+use rand::seq::SliceRandom;
 use std::{collections::HashMap, fmt::Display};
 
 pub const NB_SUITS: usize = 4;
@@ -56,16 +57,16 @@ pub const NB_RANKS: usize = 10;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum Rank {
-    Ace,
-    King,
-    Queen,
-    Jack,
-    Ten,
-    Nine,
-    Eight,
-    Seven,
-    Six,
     Five,
+    Six,
+    Seven,
+    Eight,
+    Nine,
+    Ten,
+    Jack,
+    Queen,
+    King,
+    Ace,
 }
 
 impl Rank {
@@ -198,6 +199,15 @@ impl Hand {
             .filter_map(|(&suit, &count)| if count == 0 { Some(suit) } else { None })
             .collect()
     }
+
+    pub fn master_cards(&self, deck: &Deck) -> Vec<Card> {
+        let master_cards = deck.master_cards();
+        self.cards
+            .iter()
+            .filter(|c| master_cards.contains(c))
+            .copied()
+            .collect()
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, new, Getters, Default)]
@@ -321,6 +331,114 @@ pub struct BidRecord {
     winner: Option<PlayerId>,
 }
 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub enum HandConstraint {
+    HasSuit(Suit),
+    EmptySuit(Suit),
+}
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, new)]
+pub struct Deck(Vec<Card>);
+
+impl Deck {
+    pub fn remove_hand(&mut self, hand: &Hand) {
+        self.0.retain(|c| !hand.cards().contains(c));
+    }
+
+    pub fn card_played(&mut self, card: Card) {
+        self.0.retain(|c| c != &card);
+    }
+
+    pub fn remaining_of_suit(&self, suit: &Suit) -> Vec<Card> {
+        self.0
+            .iter()
+            .filter(|c| c.suit() == suit)
+            .copied()
+            .collect()
+    }
+
+    pub fn split_hands(
+        &self,
+        nb_players: usize,
+        hand_constraints: Vec<Vec<HandConstraint>>,
+    ) -> Vec<Hand> {
+        let hand_size = self.0.len() / 3;
+        let mut hands = vec![Vec::new(); nb_players];
+        let mut hand_constraints = hand_constraints;
+        let mut cards = self.0.clone();
+        cards.shuffle(&mut rand::thread_rng());
+        for (i, constraint) in hand_constraints.iter().enumerate() {
+
+        }
+
+        // while !cards.is_empty() {
+        //     let mut card = *cards.last().unwrap();
+        //     for (i, hand) in hands.iter_mut().enumerate() {
+        //         if hand.len() == 10 {
+        //             continue;
+        //         }
+        //         let constraints = &hand_constraints[i];
+        //         for constraint in constraints {
+        //             if matches!(constraint, HandConstraint::HasSuit(s) if s == card.suit()) {
+        //                 hand.push(card);
+        //                 card = *cards.last().unwrap();
+        //                 break;
+        //             }
+        //         }
+        //     }
+        //     for (i, hand) in hands.iter_mut().enumerate() {
+        //         if hand.len() == 10 {
+        //             continue;
+        //         }
+        //         let constraints = &hand_constraints[i];
+        //         for constraint in constraints {
+        //             if !matches!(constraint, HandConstraint::EmptySuit(s) if s == card.suit()) {
+        //                 hand.push(card);
+        //                 card = *cards.last().unwrap();
+        //                 break;
+        //             }
+        //         }
+        //     }
+        // }
+
+        hands.into_iter().map(|cards| Hand::new(cards)).collect()
+    }
+
+    pub fn master_cards(&self) -> Vec<Card> {
+        let mut master_cards = Vec::new();
+        for &suit in &[Suit::Clubs, Suit::Diamonds, Suit::Hearts, Suit::Spades] {
+            let remaining = self.remaining_of_suit(&suit);
+            if let Some(max) = remaining.iter().max_by_key(|c| c.rank()) {
+                master_cards.push(*max);
+            }
+        }
+        master_cards
+    }
+}
+
+impl Default for Deck {
+    fn default() -> Self {
+        let mut cards = Vec::with_capacity(NB_SUITS * NB_RANKS);
+        for &suit in &[Suit::Clubs, Suit::Diamonds, Suit::Hearts, Suit::Spades] {
+            for &rank in &[
+                Rank::Ace,
+                Rank::King,
+                Rank::Queen,
+                Rank::Jack,
+                Rank::Ten,
+                Rank::Nine,
+                Rank::Eight,
+                Rank::Seven,
+                Rank::Six,
+                Rank::Five,
+            ] {
+                cards.push(Card::new(suit, rank));
+            }
+        }
+        Deck(cards)
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, new, Getters)]
 pub struct Game {
     me: PlayerId,
@@ -329,6 +447,8 @@ pub struct Game {
     bid_record: BidRecord,
     #[new(default)]
     round: Round,
+    #[new(default)]
+    deck: Deck,
 }
 
 /// Impl block with accessors.
@@ -356,6 +476,12 @@ impl Game {
     pub fn playable_cards(&self) -> Vec<Card> {
         self.hand.playable_cards(self.round.ongoing())
     }
+
+    pub fn deck_witout_hand(&self) -> Deck {
+        let mut deck = self.deck().clone();
+        deck.remove_hand(self.hand());
+        deck
+    }
 }
 
 impl Game {
@@ -366,11 +492,9 @@ impl Game {
         }
     }
 
-    pub fn play_card(&mut self, card: Card) {
-        self.hand.cards.retain(|c| c != &card);
-    }
-
     pub fn card_played(&mut self, player: PlayerId, card: Card) {
+        self.hand.cards.retain(|c| c != &card);
         self.round.play_card(player, card);
+        self.deck.card_played(card);
     }
 }
